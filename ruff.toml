@@ -1,0 +1,30 @@
+# One Ruff config (lint + format) for every Python project in the lab.
+#   make lint        check everything      make lint fix=1   apply safe fixes
+#   make fmt         format + sort imports
+# The deliberately naive code in a project's "break it" step may need `# noqa: <rule>`;
+# say why on the same line, so the exception is part of the story.
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = [
+    "E", "W", "F",   # pycodestyle, pyflakes
+    "I",             # import sorting
+    "B",             # bugbear: likely bugs
+    "UP",            # pyupgrade: modern syntax for 3.12
+    "SIM", "C4",     # simplifications, comprehensions
+    "ASYNC",         # blocking calls inside async def (time.sleep, open, sync HTTP)
+    "PT",            # pytest style
+    "RUF",
+]
+ignore = ["E501"]  # line length is the formatter's job
+
+[lint.isort]
+known-first-party = ["app", "config", "labcommon"]
+
+[lint.flake8-bugbear]
+# FastAPI's dependency markers are meant to be called in defaults.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body", "fastapi.Header"]
+
+[lint.per-file-ignores]
+"**/migrations/**" = ["E", "RUF012"]

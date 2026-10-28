@@ -1,0 +1,8 @@
+**/node_modules
+**/data
+.git
+infra
+projects/**/load
+docs
+**/.venv
+**/__pycache__

@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Any container with the label lab.metrics.port is scraped, every replica separately.
+  # Give a project's services these labels and they appear on the dashboard:
+  #   labels:
+  #     lab.metrics.port: "3000"
+  #     lab.metrics.path: "/metrics"   # optional, this is the default
+  - job_name: apps
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["lab.metrics.port"]
+          - name: network
+            values: ["scaling-lab_default"]
+    relabel_configs:
+      - source_labels: [__meta_docker_network_name]
+        regex: scaling-lab_default
+        action: keep
+      - source_labels: [__meta_docker_network_ip, __meta_docker_container_label_lab_metrics_port]
+        regex: (.+);(.+)
+        target_label: __address__
+        replacement: $1:$2
+      - source_labels: [__meta_docker_container_label_lab_metrics_path]
+        regex: (.+)
+        target_label: __metrics_path__
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: service
+      - source_labels: [__meta_docker_container_name]
+        regex: /?(.+)
+        target_label: instance
+    # The app's own `service` label (node-common sets it from SERVICE_NAME) wins over the
+    # compose service name instead of being renamed to exported_service.
+    honor_labels: true
+
+  - job_name: postgres
+    static_configs: [{ targets: ["postgres-exporter:9187"] }]
+  - job_name: redis
+    static_configs: [{ targets: ["redis-exporter:9121"] }]
+  - job_name: minio
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs: [{ targets: ["minio:9000"] }]
+  - job_name: cadvisor
+    static_configs: [{ targets: ["cadvisor:8080"] }]
+    metric_relabel_configs:
+      # Keep only what the dashboard uses; cAdvisor emits a lot.
+      - source_labels: [__name__]
+        regex: container_(cpu_usage_seconds_total|memory_working_set_bytes|spec_memory_limit_bytes|network_receive_bytes_total|network_transmit_bytes_total|oom_events_total|last_seen)
+        action: keep
+  - job_name: prometheus
+    static_configs: [{ targets: ["localhost:9090"] }]

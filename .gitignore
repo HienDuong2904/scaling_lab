@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+node_modules/
+.env
+**/data/
+*.log
+.DS_Store
+
+# Private planning notes, kept locally only
+scaling_project.md
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/

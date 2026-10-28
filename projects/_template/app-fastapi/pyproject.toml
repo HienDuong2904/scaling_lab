@@ -1,0 +1,31 @@
+[project]
+name = "p__P__-__NAME__"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "labcommon",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+labcommon = { path = "../../../shared/py-common", editable = true }
+
+[dependency-groups]
+dev = ["pytest>=9", "mypy>=2.4", "httpx2>=2.16"]  # httpx2: what fastapi.testclient needs
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".."]  # the project folder, so `import app.main` works
+addopts = "-ra"
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+exclude = ['(^|/)\.venv/']

@@ -1,0 +1,13 @@
+[project]
+name = "labcommon"
+version = "0.1.0"
+description = "Shared plumbing for the lab's Python services: request-ID logging and the metrics the dashboard expects"
+requires-python = ">=3.12"
+dependencies = ["prometheus-client>=0.21"]
+
+[project.optional-dependencies]
+django = ["django>=5.1"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

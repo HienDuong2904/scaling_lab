@@ -1,0 +1,31 @@
+# Added on top of the root docker-compose.yml by `make up p=__P__`.
+# Paths are relative to the repo root (the first compose file's folder), not this folder.
+#
+# The main service is called `app`. It has no host port: make up p=__P__ also starts nginx,
+# so the app is at http://localhost:8000 whether it runs 1 replica or 5 (make up p=__P__ n=5).
+# Inside the lab network (k6, other services) call it directly at http://app:8000.
+services:
+  app:
+    build: { context: ., dockerfile: projects/__P__-__NAME__/app/Dockerfile }
+    environment:
+      SERVICE_NAME: app
+      DATABASE_URL: postgresql://lab:lab@postgres:5432/lab
+      REDIS_URL: redis://redis:6379/0
+      PARTNER_URL: http://fake-partner:8080 # or http://toxiproxy:18080 to inject network faults
+      PARTNER_WEBHOOK_SECRET: ${PARTNER_WEBHOOK_SECRET:-whsec_lab}
+    labels:
+      lab.metrics.port: "8000" # Prometheus scrapes every replica; Grafana shows it as `app`
+    healthcheck: # make up waits for this, and nginx only matters once it passes
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # nginx (from the root compose file) starts only once the app answers, so its first DNS
+  # lookup finds the replicas instead of failing.
+  nginx:
+    depends_on:
+      app: { condition: service_healthy }
